@@ -32,22 +32,26 @@ class db extends PDO {
   private $tablePrefix;
 
   /**
-   * More information can be found on how to set the dsn parameter by following
-   * the links provided below.
-   *
-   * MySQL - http://us3.php.net/manual/en/ref.pdo-mysql.connection.php
-   * SQLite - http://us3.php.net/manual/en/ref.pdo-sqlite.connection.php
-   * PostreSQL - http://us3.php.net/manual/en/ref.pdo-pgsql.connection.php
+   * Class constructor.
    *
    * @param $dsn
+   *  More information can be found on how to set the dsn parameter by following
+   *  the links provided below.
+   *
+   *  - MySQL - http://us3.php.net/manual/en/ref.pdo-mysql.connection.php
+   *  - SQLite - http://us3.php.net/manual/en/ref.pdo-sqlite.connection.php
+   *  - PostreSQL - http://us3.php.net/manual/en/ref.pdo-pgsql.connection.php
    *
    * @param string $user
+   *  Username for database connection.
    *
    * @param string $passwd
+   *  Password for database connection.
    *
    * @param string $prefix
+   *  Prefix for database tables.
    */
-  public function __construct($dsn, $user = "", $passwd = "", $prefix = "") {
+  public function __construct($dsn, $user = '', $passwd = '', $prefix = '') {
     $options = array(
       PDO::ATTR_PERSISTENT => TRUE,
       PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
@@ -110,7 +114,8 @@ class db extends PDO {
   public function insert($table, $info) {
     $table = $this->tablePrefix . $table;
     $fields = $this->filter($table, $info);
-    $sql = "INSERT INTO " . $table . " (`" . implode($fields, "`, `") . "`) VALUES (:" . implode($fields, ", :") . ");";
+    $sql = "INSERT INTO " . $table . " (`" . implode($fields, "`, `") . "`) ";
+    $sql .= "VALUES (:" . implode($fields, ", :") . ");";
 
     $bind = array();
     foreach ($fields as $field) {
@@ -184,104 +189,6 @@ class db extends PDO {
   }
 
   /**
-   * Debug.
-   */
-  private function debug() {
-    if (!empty($this->errorCallbackFunction)) {
-      $error = array(
-        'Error' => $this->error,
-      );
-
-      if (!empty($this->sql)) {
-        $error['SQL Statement'] = $this->sql;
-      }
-
-      if (!empty($this->bind)) {
-        $error['Bind Parameters'] = trim(print_r($this->bind, TRUE));
-      }
-
-      $backtrace = debug_backtrace();
-      if (!empty($backtrace)) {
-        foreach ($backtrace as $info) {
-          if ($info['file'] != __FILE__) {
-            $error['Backtrace'] = $info['file'] . ' at line ' . $info['line'];
-          }
-        }
-      }
-
-      $msg = 'SQL Error' . PHP_EOL . str_repeat('-', 50);
-      foreach ($error as $key => $val) {
-        $msg .= PHP_EOL . PHP_EOL . $key . ':' . PHP_EOL . $val;
-      }
-
-      $func = $this->errorCallbackFunction;
-      $func($msg);
-    }
-  }
-
-  /**
-   * Filter.
-   *
-   * @param string $table
-   *  Table name.
-   *
-   * @param array $info
-   *  Associated array with fields and their values.
-   *
-   * @return array
-   */
-  private function filter($table = '', $info = array()) {
-    $table = $this->tablePrefix . $table;
-    $driver = $this->getAttribute(PDO::ATTR_DRIVER_NAME);
-
-    if ($driver == 'sqlite') {
-      $sql = "PRAGMA table_info('" . $table . "');";
-      $key = "name";
-    }
-    elseif ($driver == 'mysql') {
-      $sql = "DESCRIBE `" . $table . "`;";
-      $key = "Field";
-    }
-    else {
-      $sql = "SELECT column_name FROM information_schema.columns WHERE table_name = '" . $table . "';";
-      $key = "column_name";
-    }
-
-    if (FALSE !== ($list = $this->run($sql))) {
-      $fields = array();
-      foreach ($list as $record) {
-        $fields[] = $record[$key];
-      }
-
-      return array_values(array_intersect($fields, array_keys($info)));
-    }
-
-    return array();
-  }
-
-  /**
-   * Cleanup parameters.
-   *
-   * @param mixed $bind
-   *  Bind parameters as string/array.
-   *
-   * @return array
-   *  Bind parameters as array.
-   */
-  private function cleanup($bind) {
-    if (!is_array($bind)) {
-      if (!empty($bind)) {
-        $bind = array($bind);
-      }
-      else {
-        $bind = array();
-      }
-    }
-
-    return $bind;
-  }
-
-  /**
    * This method is used to run free-form SQL statements that can't be handled
    * by the included delete, insert, select, or update methods.
    *
@@ -350,7 +257,7 @@ class db extends PDO {
    *  Callback function.
    */
   public function setErrorCallbackFunction($errorCallbackFunction) {
-    //Variable functions for won't work with language constructs such as echo
+    // Variable functions for won't work with language constructs such as echo
     // and print, so these are replaced with print_r.
     if (in_array(strtolower($errorCallbackFunction), array("echo", "print"))) {
       $errorCallbackFunction = "print_r";
@@ -359,5 +266,104 @@ class db extends PDO {
     if (function_exists($errorCallbackFunction)) {
       $this->errorCallbackFunction = $errorCallbackFunction;
     }
+  }
+
+  /**
+   * Debug.
+   */
+  private function debug() {
+    if (!empty($this->errorCallbackFunction)) {
+      $error = array(
+        'Error' => $this->error,
+      );
+
+      if (!empty($this->sql)) {
+        $error['SQL Statement'] = $this->sql;
+      }
+
+      if (!empty($this->bind)) {
+        $error['Bind Parameters'] = trim(print_r($this->bind, TRUE));
+      }
+
+      $backtrace = debug_backtrace();
+      if (!empty($backtrace)) {
+        foreach ($backtrace as $info) {
+          if ($info['file'] != __FILE__) {
+            $error['Backtrace'] = $info['file'] . ' at line ' . $info['line'];
+          }
+        }
+      }
+
+      $msg = 'SQL Error' . PHP_EOL . str_repeat('-', 50);
+      foreach ($error as $key => $val) {
+        $msg .= PHP_EOL . PHP_EOL . $key . ':' . PHP_EOL . $val;
+      }
+
+      $func = $this->errorCallbackFunction;
+      $func($msg);
+    }
+  }
+
+  /**
+   * Filter.
+   *
+   * @param string $table
+   *  Table name.
+   *
+   * @param array $info
+   *  Associated array with fields and their values.
+   *
+   * @return array
+   */
+  private function filter($table = '', $info = array()) {
+    $table = $this->tablePrefix . $table;
+    $driver = $this->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+    if ($driver == 'sqlite') {
+      $sql = "PRAGMA table_info('" . $table . "');";
+      $key = "name";
+    }
+    elseif ($driver == 'mysql') {
+      $sql = "DESCRIBE `" . $table . "`;";
+      $key = "Field";
+    }
+    else {
+      $sql = "SELECT column_name FROM information_schema.columns ";
+      $sql .= "WHERE table_name = '" . $table . "';";
+      $key = "column_name";
+    }
+
+    if (FALSE !== ($list = $this->run($sql))) {
+      $fields = array();
+      foreach ($list as $record) {
+        $fields[] = $record[$key];
+      }
+
+      return array_values(array_intersect($fields, array_keys($info)));
+    }
+
+    return array();
+  }
+
+  /**
+   * Cleanup parameters.
+   *
+   * @param mixed $bind
+   *  Bind parameters as string/array.
+   *
+   * @return array
+   *  Bind parameters as array.
+   */
+  private function cleanup($bind) {
+    if (!is_array($bind)) {
+      if (!empty($bind)) {
+        $bind = array($bind);
+      }
+      else {
+        $bind = array();
+      }
+    }
+
+    return $bind;
   }
 }
