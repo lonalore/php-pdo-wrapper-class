@@ -34,7 +34,7 @@ class db extends PDO {
   /**
    * Class constructor.
    *
-   * @param $dsn
+   * @param string $dsn
    *  More information can be found on how to set the dsn parameter by following
    *  the links provided below.
    *
@@ -51,7 +51,7 @@ class db extends PDO {
    * @param string $prefix
    *  Prefix for database tables.
    */
-  public function __construct($dsn, $user = '', $passwd = '', $prefix = '') {
+  public function __construct($dsn = '', $user = '', $passwd = '', $prefix = '') {
     $options = array(
       PDO::ATTR_PERSISTENT => TRUE,
       PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
@@ -101,17 +101,17 @@ class db extends PDO {
   /**
    * INSERT statement.
    *
-   * @param $table
+   * @param string $table
    *  Table name.
    *
-   * @param $info
+   * @param array $info
    *  Associative array with field names and values.
    *
    * @return array|bool|int
    *  If no SQL errors are produced, this method will return with the the last
    *  inserted ID. Otherwise 0.
    */
-  public function insert($table, $info) {
+  public function insert($table = '', $info = array()) {
     $table = $this->tablePrefix . $table;
     $fields = $this->filter($table, $info);
     $sql = "INSERT INTO " . $table . " (`" . implode($fields, "`, `") . "`) ";
@@ -204,7 +204,7 @@ class db extends PDO {
    *  INSERT statement, or an associate array of results for SELECT, DESCRIBE,
    *  and PRAGMA statements. Otherwise FALSE.
    */
-  public function run($sql, $bind = '') {
+  public function run($sql = '', $bind = '') {
     $this->sql = trim($sql);
     $this->bind = $this->cleanup($bind);
     $this->error = '';
@@ -354,7 +354,7 @@ class db extends PDO {
    * @return array
    *  Bind parameters as array.
    */
-  private function cleanup($bind) {
+  private function cleanup($bind = '') {
     if (!is_array($bind)) {
       if (!empty($bind)) {
         $bind = array($bind);
